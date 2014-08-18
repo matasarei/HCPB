@@ -95,7 +95,7 @@ class HCJB {
      * @param string Function name
      * @param array Arguments
      */
-    private static function exec($name, $args) {
+    private static function exec($name, array $args) {
         if (array_key_exists($name, self::$functions)) {
             $func = self::$functions[$name];
             return $func($args);
@@ -114,7 +114,7 @@ class HCJB {
      * @param array Arguments
      * @param string Passkey (if security is enabled)
      */
-    public static function get($url, $function, $args = array(), $passkey = null) {
+    public static function get($url, $function, array $args = array(), $passkey = null) {
         !self::$config && self::config();
         self::$config['secured'] && $url .= '?p=' . self::$config['passkey'];
         $url .= "&f={$function}";
@@ -146,12 +146,8 @@ class HCJB {
      * @param string Function name
      * @param callable Anonymous function
      */
-    public static function addFunction($name, $function) {
-        if (is_callable($function)) {
-            self::$functions[$name] = $function;
-        } else {
-            throw new Exception('Value is not callable!', 1);
-        }
+    public static function addFunction($name, callable $function) {
+        self::$functions[$name] = $function;
     }
 }
 
