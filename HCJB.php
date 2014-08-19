@@ -116,7 +116,7 @@ class HCJB {
      */
     public static function get($url, $function, array $args = array(), $passkey = null) {
         !self::$config && self::config();
-        self::$config['secured'] && $url .= '?p=' . self::$config['passkey'];
+        self::$config['secured'] && $url .= '?p=' . urlencode(self::$config['passkey']);
         $url .= "&f={$function}";
         $args && $url .= '&a=' . urlencode(json_encode($args));
 
