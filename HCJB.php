@@ -50,7 +50,12 @@ class HCJB {
     public static function query() {
         !self::$config && self::config();
         if (isset($_REQUEST['f'])) {
-            isset($_REQUEST['a']) ? $args = json_decode($_REQUEST['a']) : $args = array();
+        if (isset($_REQUEST['a'])) {
+                $args = str_replace('\"', '"', str_replace('\\\\', '\\', $_REQUEST['a']));
+                $args = json_decode($args);
+            } else {
+                $args = array();
+            }
             if (self::$config['secured']) {
                 if (isset($_REQUEST['p'])) {
                     if (self::$config['passkey'] === $_REQUEST['p']) {
@@ -95,7 +100,7 @@ class HCJB {
      * @param string Function name
      * @param array Arguments
      */
-    private static function exec($name, array $args) {
+    private static function exec($name, $args) {
         if (array_key_exists($name, self::$functions)) {
             $func = self::$functions[$name];
             return $func($args);
@@ -114,12 +119,11 @@ class HCJB {
      * @param array Arguments
      * @param string Passkey (if security is enabled)
      */
-    public static function get($url, $function, array $args = array(), $passkey = null) {
+    public static function get($url, $function, $args = array(), $passkey = null) {
         !self::$config && self::config();
         self::$config['secured'] && $url .= '?p=' . urlencode(self::$config['passkey']);
         $url .= "&f={$function}";
         $args && $url .= '&a=' . urlencode(json_encode($args));
-
         if ($a = json_decode(file_get_contents($url))) {
             if (isset($a->err)) {
                 throw new Exception($a->err, 1);
@@ -146,8 +150,12 @@ class HCJB {
      * @param string Function name
      * @param callable Anonymous function
      */
-    public static function addFunction($name, callable $function) {
-        self::$functions[$name] = $function;
+    public static function addFunction($name, $function) {
+        if (is_callable($function)) {
+            self::$functions[$name] = $function;
+        } else {
+            throw new Exception('Value is not callable!', 1);
+        }
     }
 }
 
