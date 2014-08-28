@@ -51,8 +51,8 @@ class HCJB {
         !self::$config && self::config();
         if (isset($_REQUEST['f'])) {
         if (isset($_REQUEST['a'])) {
-                $args = str_replace('\"', '"', str_replace('\\\\', '\\', $_REQUEST['a']));
-                $args = json_decode($args);
+                $replacement = array("\'" => "'", '\"' => '"', '\\\\' => '\\');
+                $args = json_decode(self::prepareRequest($_REQUEST['a'], $replacement));
             } else {
                 $args = array();
             }
@@ -75,6 +75,13 @@ class HCJB {
             echo null;
         }
         exit();
+    }
+
+    private static function prepareRequest($request, array $replacement) {
+        foreach ($replacement as $search => $replace) {
+            $request = str_replace($search, $replace, $request);
+        }
+        return $request;
     }
     
     /**
