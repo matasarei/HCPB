@@ -21,17 +21,17 @@
  * @package    HCJB
  * @copyright  2014 Yevhen Matasar <matasar.ei@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version    2014081600
+ * @version    2014091600
  */
 
 /**
  * HC JSON Bridge
- * Static only
+ * static only
  */
-class HCJB {
+class HCJB {	
     private function __construct() { }
     private function __clone() { }
-    
+	
     /**
      * @var array Added functions
      */
@@ -89,8 +89,8 @@ class HCJB {
      * 
      * @param array Configuration
      */
-    public static function config($config = null) {
-        !is_array($config) && $config = (array)simplexml_load_file(__DIR__ . '/hcjb.xml');
+    public static function config(array $config = array()) {
+        !$config && $config = (array)simplexml_load_file(__DIR__ . '/hcjb.xml');
         $required = array('secured', 'passkey');
         foreach ($required as $value) {
             if (isset($config[$value])) {
@@ -118,15 +118,27 @@ class HCJB {
         }
     }
     
+	/**
+	 * @param string URL
+	 */
+	private static function checkUrl($url, $strict = true) {
+		$result = (bool)preg_match("/^http:\/\/[a-z0-9.\/-]*.php$/ui", $url);
+		if ($strict && !$result) {
+			throw new Exception("Wrong URL!", 1);
+		}
+		return $result; 
+	}
+	
     /**
      * Send query
      * 
-     * @param string Handler url
+     * @param string Handler URL
      * @param string Function name
      * @param array Arguments
      * @param string Passkey (if security is enabled)
      */
     public static function get($url, $function, $args = array(), $passkey = null) {
+    	self::checkUrl($url);
         !self::$config && self::config();
         self::$config['secured'] && $url .= '?p=' . urlencode(self::$config['passkey']);
         $url .= "&f={$function}";
@@ -170,6 +182,6 @@ class HCJB {
 HCJB::addFunction('info', function() {
     $a = new stdClass();
     $a->name = 'HC JSON Bridge';
-    $a->version = 2014081600;
+    $a->version = 20140916;
     return $a;
 });
