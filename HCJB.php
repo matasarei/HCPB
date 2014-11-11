@@ -21,7 +21,7 @@
  * @package    HCJB
  * @copyright  2014 Yevhen Matasar <matasar.ei@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version    2014091600
+ * @version    2014111100
  */
 
 /**
@@ -143,13 +143,13 @@ class HCJB {
         self::$config['secured'] && $url .= '?p=' . urlencode(self::$config['passkey']);
         $url .= "&f={$function}";
         $args && $url .= '&a=' . urlencode(json_encode($args));
-        if ($a = json_decode(file_get_contents($url))) {
+        if ($a = json_decode(@file_get_contents($url))) {
             if (isset($a->err)) {
                 throw new Exception($a->err, 1);
             }
             return $a;
         } else {
-            return null;
+            throw new Exception('Request failed', 1);
         }
     }
     
@@ -182,6 +182,6 @@ class HCJB {
 HCJB::addFunction('info', function() {
     $a = new stdClass();
     $a->name = 'HC JSON Bridge';
-    $a->version = 20140916;
+    $a->version = 20141111;
     return $a;
 });
