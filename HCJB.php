@@ -66,7 +66,7 @@ class HCJB {
                         echo json_encode($a);
                     }
                 } else {
-                   throw new Exception("Passkey needed!", 1);
+                   throw new \Exception("Passkey needed!", 1);
                 }
             } else {
                 echo json_encode(HCJB::exec($_REQUEST['f'], $args));
@@ -96,7 +96,7 @@ class HCJB {
             if (isset($config[$value])) {
                 self::$config[$value] = $config[$value];
             } else {
-                throw new Exception("{$value} : not found!", 1);
+                throw new \Exception("{$value} : not found!", 1);
             }
         }
     }
@@ -124,7 +124,7 @@ class HCJB {
 	private static function checkUrl($url, $strict = true) {
 		$result = (bool)preg_match("/^http:\/\/[a-z0-9.\/-]*.php$/ui", $url);
 		if ($strict && !$result) {
-			throw new Exception("Wrong URL!", 1);
+			throw new \Exception("Wrong URL!", 1);
 		}
 		return $result; 
 	}
@@ -132,25 +132,27 @@ class HCJB {
     /**
      * Send query
      * 
-     * @param string Handler URL
+     * @param string Handler url
      * @param string Function name
      * @param array Arguments
      * @param string Passkey (if security is enabled)
      */
-    public static function get($url, $function, $args = array(), $passkey = null) {
-    	self::checkUrl($url);
+    public static function get($url, $function, $args = array(), $passkey = null, $strictmode = false) {
         !self::$config && self::config();
         self::$config['secured'] && $url .= '?p=' . urlencode(self::$config['passkey']);
         $url .= "&f={$function}";
         $args && $url .= '&a=' . urlencode(json_encode($args));
-        if ($a = json_decode(@file_get_contents($url))) {
-            if (isset($a->err)) {
-                throw new Exception($a->err, 1);
-            }
-            return $a;
-        } else {
-            throw new Exception('Request failed', 1);
+        
+        $response = @file_get_contents($url);
+        if ($response === false) {
+            throw new \Exception('Request failed', 1);
         }
+        
+        $a = json_decode($response);
+        if (isset($a->err)) {
+            throw new \Exception($a->err, 1);
+        }
+        return $a;
     }
     
     /**
@@ -173,7 +175,7 @@ class HCJB {
         if (is_callable($function)) {
             self::$functions[$name] = $function;
         } else {
-            throw new Exception('Value is not callable!', 1);
+            throw new \Exception('Value is not callable!', 1);
         }
     }
 }
