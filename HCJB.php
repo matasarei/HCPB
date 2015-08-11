@@ -1,47 +1,53 @@
 <?php
 // Copyright (C) 2015  Yevhen Matasar
-//
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /**
- * HC JSON Bribge
- *
- * @package    HCJB
+ * HC PHP Bribge
+ * 
+ * @package    HCPB
  * @copyright  2014 Yevhen Matasar <matasar.ei@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version    2015070800
+ * @version    2015081102
  */
-
+ 
  /**
- * HC JSON Bridge
+ * HC PHP Bridge
  * static only
  */
-class HCJB {
+class HCJB {	
     private function __construct() { }
     private function __clone() { }
-
+	
     /**
      * @var array Added functions
      */
     private static $functions = array();
-
+    
     /**
      * @var array Script configuration
      */
     private static $config = null;
-
+    
+    private static $debug = false;
+ 
+    public static function debug($val) {
+        self::$debug = (bool)$val;
+    }
+ 
     /**
      * Query handler
      *
@@ -49,10 +55,18 @@ class HCJB {
      */
     public static function query() {
         !self::$config && self::config();
-        $function = $_REQUEST['f'];
-        $args = (array)json_decode(base64_decode($_REQUEST['a']));
-        $passkey = base64_decode($_REQUEST['p']);
 
+        //get data
+        $function = $_REQUEST['f'];
+        $args = (array)json_decode(gzinflate(base64_decode($_REQUEST['a'])));
+        $passkey = $_REQUEST['p'];
+
+        //debug
+        if (!empty($_REQUEST['d'])) {
+            var_dump($_REQUEST, $args);
+        }
+
+        //check passkey
         if (self::$config['secured'] && $passkey !== md5(self::$config['passkey'])) {
             $a = new stdClass;
             $a->err = 'Wrong passkey!';
@@ -60,13 +74,14 @@ class HCJB {
             return false;
         }
 
+        //execute
         echo json_encode(self::exec($function, $args));
         return true;
     }
-
+    
     /**
      * Set configuration
-     *
+     * 
      * @param array Configuration
      */
     public static function config(array $config = array()) {
@@ -80,10 +95,10 @@ class HCJB {
             }
         }
     }
-
+    
     /**
      * Execute query
-     *
+     * 
      * @param string Function name
      * @param array Arguments
      */
@@ -97,21 +112,21 @@ class HCJB {
             return $a;
         }
     }
-
-    /**
-     * @param string URL
-     */
-    private static function checkUrl($url, $strict = true) {
-        $result = (bool)preg_match("/^https?:\/\/[a-z0-9.\/-]*.php$/ui", $url);
-        if ($strict && !$result) {
-            throw new \Exception("Wrong URL!", 1);
-        }
-        return $result;
-    }
-
+    
+	/**
+	 * @param string URL
+	 */
+	private static function checkUrl($url, $strict = true) {
+		$result = (bool)preg_match("/^https?:\/\/[a-z0-9.\/-]*.php$/ui", $url);
+		if ($strict && !$result) {
+			throw new \Exception("Wrong URL!", 1);
+		}
+		return $result; 
+	}
+    
     /**
      * Send query
-     *
+     * 
      * @param string Handler url
      * @param string Function name
      * @param array Arguments
@@ -119,30 +134,44 @@ class HCJB {
      */
     public static function get($handler, $function, $args = array(), $passkey = null, $strict = true) {
         !self::$config && self::config();
-
+        
         //check handler URL
-        self::checkUrl($handler);
-
+        if ($strict) {
+            self::checkUrl($handler);
+        }
+        
         //test args
         is_object($args) && $args = (array)$args;
         if (!is_array($args)) {
             throw new InvalidArgumentException('An object or an array expected, ' . gettype($args) . ' given.');
         }
-
-        $request = "{$handler}?f={$function}";
-
+        
+        //prepare request
+        $request = "{$handler}?f=" . $function;
+        self::$debug && $request .= '&d=' . (int)self::$debug;
+        
+        //passkey
         if (self::$config['secured'] || $passkey) {
             !$passkey && $passkey = self::$config['passkey'];
-            $request .= '&p=' . base64_encode(md5($passkey));
+            $request .= '&p=' . md5($passkey);
         }
+        $args && $request .= '&a=' . urlencode(base64_encode(gzdeflate(json_encode($args), 9)));
 
-        $request .= '&a=' . base64_encode(json_encode($args));
-
+        //send request
         $response = file_get_contents($request);
-
+        
+        if (self::$debug) {
+            return $response;
+        }
+        
+        //decode and return
+        $response = json_decode($response);
+        if (isset($response->err)) {
+            throw new Exception($response->err, 1);
+        }
         return $response;
     }
-
+    
     /**
      * Remove function from the handler
      * @param string Function name
@@ -153,7 +182,7 @@ class HCJB {
             return true;
         } else return false;
     }
-
+    
     /**
      * Add function to the handler
      * @param string Function name
@@ -168,11 +197,10 @@ class HCJB {
     }
 }
 
-
 //Adds function 'info' to the script handler
 HCJB::addFunction('info', function() {
     $a = new stdClass();
-    $a->name = 'HC JSON Bridge';
-    $a->version = 20150708;
+    $a->name = 'HC PHP Bridge';
+    $a->version = 2015081102;
     return $a;
 });
