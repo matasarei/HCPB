@@ -1,8 +1,8 @@
-# HCJB
-HC JSON Bridge is a simple interface that allows to communicate two or more sites.
+# HCPB
+HC PHP Bridge is a simple interface that allows to send data or commands between different php projects.
 
 ##Features
-- Add functions to the handler, that allows to extend functionality;
+- Add functions to the handler to extend functionality;
 - Passkey for basic security.
 
 ##Requirements
@@ -40,13 +40,12 @@ object(stdClass)#2 (1) { ["message"]=> string(8) "Test ok!" }
 ```
 
 ##Passkey
-To configure a passkey, you must setup the configuration file (hcjb.xml):
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<config>
-    <secured>true</secured>
-    <passkey>your_passkey</passkey>
-</config>
+To configure a passkey, you must setup the configuration file (hcjb.json):
+```json
+{
+   "secured": true,
+   "passkey": "your_passkey"
+}
 ```
 
 Or to load a configuration from the code:
